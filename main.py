@@ -1,2 +1,2 @@
 for i in range(0,10):
-    print("Саня свин!")
+    print("123")
