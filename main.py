@@ -1,2 +1,2 @@
 for i in range(0,10):
-    print("123")
+    print("1232")
