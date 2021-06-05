@@ -15,6 +15,16 @@ bot = telebot.TeleBot(token)
 
 # ХЕНДЛЕР НА СТАРТ
 
+@bot.message_handler(commands=['start'])
+	markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+	item1 = types.KeyboardButton("Создать новую БД.")
+	item2 = types.KeyboardButton("Войти в существующую.")
+	item3 = types.KeyboardButton("Забыл пароль")
+	markup.add(item1)
+	markup.add(item2)
+	markup.add(item3)
+
+
 def add_more_room(cmci):
 	global room
 	global floor
