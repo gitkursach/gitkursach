@@ -16,6 +16,7 @@ bot = telebot.TeleBot(token)
 # ХЕНДЛЕР НА СТАРТ
 
 @bot.message_handler(commands=['start'])
+def welcome(message):
 	markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
 	item1 = types.KeyboardButton("Создать новую БД.")
 	item2 = types.KeyboardButton("Войти в существующую.")
