@@ -22,17 +22,18 @@ def add_more_room(cmci):
 		floor = message.text
 		msg = bot.send_message(cmci, f'Введите номер кабинета : ')
 		bot.register_next_step_handler(msg, add_room) 
-	
+
 	def add_room(message):
-		
+
 		room = message.text
+
 		bot.send_message(cmci, f'Кабинет добавлен:')
 
 		markup = types.InlineKeyboardMarkup(row_width = 1)
 		item1 = types.InlineKeyboardButton("Да", callback_data = 'add_person')
 		item2 = types.InlineKeyboardButton("Нет (Выйти в меню)", callback_data = 'leave')
 		markup.add(item1, item2)
-		bot.send_message(cmci, f"Этаж №{floor} Кабинет №{room} Добавляем сотрудника?",
+		bot.send_message(cmci, f"Этаж №{'floor'} Кабинет №{'room'} Добавляем сотрудника?",
 		parse_mode='html', reply_markup=markup)
 
 
