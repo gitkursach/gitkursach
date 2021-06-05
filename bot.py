@@ -20,7 +20,9 @@ def welcome(message):
 	item1 = types.KeyboardButton("Создать новую БД.")
 	item2 = types.KeyboardButton("Войти в существующую.")
 	item3 = types.KeyboardButton("Забыл пароль")
-	markup.add(item1, item2,item3)
+	markup.add(item1)
+	markup.add(item2)
+	markup.add(item3)
 
 	msg = bot.send_message(message.chat.id, f"Добро пожаловать, {message.from_user.first_name}. Данный бот создан, что бы ты мог ничего не делать!<a href='https://yandex.ru/'>Ссылка на приложение</a>",
 		parse_mode='html', reply_markup=markup)
