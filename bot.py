@@ -1,22 +1,36 @@
-#1819155073:AAGHK82SgrjwKk4BeYQwN7qiSaQTN7lleRA
+#1819155073:AAGQsLiHM1y6omMJYdldIhGiJrfSN7SHL4g
+
 
 # API ТЕЛЕГРАММА
 import telebot
 from telebot import types
 
+import hashlib
 import random
 import os
 import datetime
 import time
 
 # TOKEN
-token = "1819155073:AAGHK82SgrjwKk4BeYQwN7qiSaQTN7lleRA"
+token = "1819155073:AAGQsLiHM1y6omMJYdldIhGiJrfSN7SHL4g"
 bot = telebot.TeleBot(token) 
 
 # ЧИСТКА СООБЩЕНИЙ ЗА ЮЗЕРОМ
 #def messageClear(chatId, messageId):
 #	bot.delete_message(chatId, messageId)
 
+# ГЕНЕРАТОР ХЕША
+def makeHash(mt):
+	salt = os.urandom(128)
+	password = mt
+	key = hashlib.pbkdf2_hmac(
+		'sha256',
+		password.encode('utf-8'),
+		salt,
+		100000
+		)
+	storage = key + salt
+	return storage
 
 # ДОБАВЛЕНИЕ СОТРУДНИКОВ
 
@@ -161,7 +175,7 @@ def welcome(message):
 
 	bot.send_message(message.chat.id, "Добро пожаловать. Данный бот создан, что бы ты мог ничего не делать!",
 	parse_mode='html', reply_markup=markup)
-
+		
 
 # ОТЛОВ ВАРИАНТОВ
 @bot.callback_query_handler(func = lambda call: True)
@@ -311,6 +325,8 @@ def catch(call):
 				parse_mode='html', reply_markup=markup)
 
 			def getData(message):
+				temp = makeHash(message.text)
+				print(temp)
 				msg = bot.send_message(call.message.chat.id, 'Введите GET данные : ', parse_mode='html')
 				bot.register_next_step_handler(msg, finishPassList)
 
