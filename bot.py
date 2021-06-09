@@ -63,6 +63,54 @@ def add_persons(chatId):
 	parse_mode='html')
 	bot.register_next_step_handler(msg, email)
 
+# ДОБАВЛЕНИЕ ПОДЧЕНЁННЫХ
+
+def finishSubWorkers(chatId):
+
+		markup = types.InlineKeyboardMarkup(row_width = 1)
+		item1 = types.InlineKeyboardButton("Да (Добавть ещё одного)", callback_data = 'yesAddPerson')
+		item2 = types.InlineKeyboardButton("Закончить (Перейти к работе с БД)", callback_data = 'endSubAdd')
+		item3 = types.InlineKeyboardButton("Забыл пароль", callback_data = 'recover')
+		markup.add(item1, item2)
+
+		bot.send_message(chatId, "Сотрудник добавлен. Добавляем ещё?",
+		parse_mode='html', reply_markup=markup)
+
+
+def subHaveSubWorkers(chatId):
+		markup = types.InlineKeyboardMarkup(row_width = 1)
+		item1 = types.InlineKeyboardButton("Да (Позволит ему самостоятельно добавлять подченённых в БД)", callback_data = 'yesSubWorkers')
+		item2 = types.InlineKeyboardButton("Нет (Запретит ему данную функцию)", callback_data = 'noSubWorkers')
+		markup.add(item1, item2)
+			
+		msg = bot.send_message(chatId, "Разрешить ли ему добавлять подченённых? ",
+		parse_mode='html', reply_markup=markup)
+
+def add_subPersons(chatId):
+
+	def subWorkWithClients(message):
+
+		markup = types.InlineKeyboardMarkup(row_width = 1)
+		item1 = types.InlineKeyboardButton("Да (Позволит обрабатывать обращения клиентов)", callback_data = 'yesSubWork')
+		item2 = types.InlineKeyboardButton("Нет (Запретит ему доступ к клиентам)", callback_data = 'noSubWork')
+		markup.add(item1, item2)
+		
+		msg = bot.send_message(message.chat.id, "Разрешить ли ему работать с клиентами?",
+		parse_mode='html', reply_markup=markup) 
+
+	def subEmail(message):
+		msg = bot.send_message(chatId, "Введите его почту : ",
+		parse_mode='html')
+		if True:
+			bot.register_next_step_handler(msg, subWorkWithClients)
+		else:
+			bot.register_next_step_handler(msg, subHaveSubWorkers)
+
+
+	msg = bot.send_message(chatId, "Добавляем Сотрудника. Введите его ФИО : ",
+	parse_mode='html')
+	bot.register_next_step_handler(msg, subEmail)
+
 
 # ДОБАВЛЕНИЕ КОМНАТ
 def add_rooms(chatId):
@@ -95,6 +143,17 @@ def main_menu():
 	item2 = types.InlineKeyboardButton("Войти в существующую.", callback_data = 'login')
 	item3 = types.InlineKeyboardButton("Забыл пароль", callback_data = 'repair')
 	markup.add(item1, item2,item3)
+	return markup
+
+# ВЫВОД МЕНЮ БАЗЫ
+def db_menu():
+	markup = types.InlineKeyboardMarkup(row_width = 1)
+	item1 = types.InlineKeyboardButton("Управление подченёнными", callback_data = 'subWorkersControle')
+	item2 = types.InlineKeyboardButton("Список корпоративных паролей", callback_data = 'passList')
+	item3 = types.InlineKeyboardButton("Список Клиентов", callback_data = 'clientsList')
+	item4 = types.InlineKeyboardButton("Добавить подчинённого", callback_data = 'addSubWorker')
+	item5 = types.InlineKeyboardButton("На главную", callback_data = 'back')
+	markup.add(item1, item2, item3, item4, item5)
 	return markup
 
 
@@ -235,7 +294,85 @@ def catch(call):
 			msg = bot.send_message(call.message.chat.id, f'Введите ваш персональный код : ')
 			bot.register_next_step_handler(msg, loginCheck)
 
+		# ДАННЫЕ ПО ПОДЧИНЁННЫМ КОНКРЕТНОГО ЛИЦА
+		if call.data == 'subWorkersControle':
+			bot.delete_message(call.message.chat.id, call.message.message_id)
+			bot.send_message(call.message.chat.id, f'Здесь каким-то 🦀 будут выводиться данные базы...')
+			time.sleep(4)
+			bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id + 1, 
+			text='<b align="center">МЕНЮ БАНКА</b>', reply_markup=db_menu(), parse_mode = 'html')
 
+		# КОНТЕЙНЕР КОРП. ПАРОЛЕЙ
+		if call.data == 'passList':
+
+			def finishPassList(message):
+				markup = types.InlineKeyboardMarkup(row_width = 1)
+				item1 = types.InlineKeyboardButton("Добавить в базу", callback_data = 'addCorpPass')
+				item2 = types.InlineKeyboardButton("Просмотреть имеющиеся данные", callback_data = 'watchGet')
+				markup.add(item1, item2)
+
+				bot.send_message(call.message.chat.id, "Выберите действие : (❗ВНИМАНИЕ не забудьте удалить введённые данные из чата ТГ, во избежание утечки информации.❗)",
+				parse_mode='html', reply_markup=markup)
+
+			def getData(message):
+				msg = bot.send_message(call.message.chat.id, 'Введите GET данные : ', parse_mode='html')
+				bot.register_next_step_handler(msg, finishPassList)
+
+			def enterPass(message):
+				msg = bot.send_message(call.message.chat.id, 'Введите пароль : ', parse_mode='html')
+				bot.register_next_step_handler(msg, getData)
+
+			def enterLogin(message):
+				msg = bot.send_message(call.message.chat.id, 'Введите логин : ', parse_mode='html')
+				bot.register_next_step_handler(msg, enterPass)
+
+
+			bot.delete_message(call.message.chat.id, call.message.message_id)
+			msg = bot.send_message(call.message.chat.id, '''Для доступа, войдите!
+Введите ваш EMAIL: ''',
+			parse_mode='html')
+			bot.register_next_step_handler(msg, enterLogin)
+
+		# ДОБАВЛЕНИЕ КОРП. ДАННЫХ В БД
+		if call.data == 'addCorpPass':
+			bot.delete_message(call.message.chat.id, call.message.message_id)
+			bot.send_message(call.message.chat.id, f'Ваши данные типо были добавлены... (нет)')
+			time.sleep(3)
+			bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id + 1, 
+			text='<b align="center">МЕНЮ БАНКА</b>', reply_markup=db_menu(), parse_mode = 'html')
+
+		# ПРОСМОТР ИМЕЮЩИХСЯ ДАННЫХ
+		if call.data == 'watchGet':
+			bot.delete_message(call.message.chat.id, call.message.message_id)
+			bot.send_message(call.message.chat.id, f'Тут могли быть ваши данные, но тут поселился 👽')
+			time.sleep(4)
+			bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id + 1, 
+			text='<b align="center">МЕНЮ БАНКА</b>', reply_markup=db_menu(), parse_mode = 'html')
+
+		# СПИСОК КЛИЕНТОВ
+		if call.data == 'clientsList':
+			bot.delete_message(call.message.chat.id, call.message.message_id)
+			bot.send_message(call.message.chat.id, f'Здесь будут данные по клиентам, за которыми мы пристально 👁')
+			time.sleep(4)
+			bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id + 1, 
+			text='<b align="center">МЕНЮ БАНКА</b>', reply_markup=db_menu(), parse_mode = 'html')
+
+		# ДОБАВЛЕНИЕ ПОДЧЕНЁННОГО
+		if call.data == 'addSubWorker':
+			bot.delete_message(call.message.chat.id, call.message.message_id)
+			add_subPersons(call.message.chat.id)
+
+		if call.data == 'endSubAdd':
+			bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id + 1, 
+			text='<b align="center">МЕНЮ БАНКА</b>', reply_markup=db_menu(), parse_mode = 'html')
+
+		if call.data == 'yesSubWork' or call.data == 'noSubWork':
+			bot.delete_message(call.message.chat.id, call.message.message_id)
+			subHaveSubWorkers(call.message.chat.id)
+
+		if call.data == 'yesSubWorkers' or call.data == 'noSubWorkers':
+			bot.delete_message(call.message.chat.id, call.message.message_id)
+			finishSubWorkers(call.message.chat.id)
 
 
 # RUN
