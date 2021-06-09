@@ -13,37 +13,83 @@ import time
 token = "1819155073:AAGHK82SgrjwKk4BeYQwN7qiSaQTN7lleRA"
 bot = telebot.TeleBot(token) 
 
-# ХЕНДЛЕР НА СТАРТ
+# ЧИСТКА СООБЩЕНИЙ ЗА ЮЗЕРОМ
+#def messageClear(chatId, messageId):
+#	bot.delete_message(chatId, messageId)
 
-def add_more_room(cmci):
-	global room
-	global floor
-	def add_floor(message):
-		floor = message.text
-		msg = bot.send_message(cmci, f'Введите номер кабинета : ')
-		bot.register_next_step_handler(msg, add_room) 
 
-	def add_room(message):
+# ДОБАВЛЕНИЕ СОТРУДНИКОВ
 
-		room = message.text
-
-		bot.send_message(cmci, f'Кабинет добавлен:')
+def finishWorkers(chatId):
 
 		markup = types.InlineKeyboardMarkup(row_width = 1)
-		item1 = types.InlineKeyboardButton("Да", callback_data = 'add_person')
-		item2 = types.InlineKeyboardButton("Нет (Выйти в меню)", callback_data = 'leave')
+		item1 = types.InlineKeyboardButton("Да (Добавть ещё одного)", callback_data = 'yesAddPerson')
+		item2 = types.InlineKeyboardButton("Закончить (Перейти к работе с БД)", callback_data = 'end')
+		item3 = types.InlineKeyboardButton("Забыл пароль", callback_data = 'recover')
 		markup.add(item1, item2)
-		bot.send_message(cmci, f"Этаж №{'floor'} Кабинет №{'room'} Добавляем сотрудника?",
+
+		bot.send_message(chatId, "Сотрудник добавлен. Добавляем ещё?",
 		parse_mode='html', reply_markup=markup)
 
 
+def haveSubWorkers(chatId):
+		markup = types.InlineKeyboardMarkup(row_width = 1)
+		item1 = types.InlineKeyboardButton("Да (Позволит ему самостоятельно добавлять подченённых в БД)", callback_data = 'yesSubWorkers')
+		item2 = types.InlineKeyboardButton("Нет (Запретит ему данную функцию)", callback_data = 'noSubWorkers')
+		markup.add(item1, item2)
+			
+		msg = bot.send_message(chatId, "Разрешить ли ему добавлять подченённых? ",
+		parse_mode='html', reply_markup=markup)
+
+def add_persons(chatId):
+
+	def workWithClients(message):
+
+		markup = types.InlineKeyboardMarkup(row_width = 1)
+		item1 = types.InlineKeyboardButton("Да (Позволит обрабатывать обращения клиентов)", callback_data = 'yesWork')
+		item2 = types.InlineKeyboardButton("Нет (Запретит ему доступ к клиентам)", callback_data = 'noWork')
+		markup.add(item1, item2)
 		
-	msg = bot.send_message(cmci, 'Добавляем кабинет. Введите этаж :')
-	bot.register_next_step_handler(msg, add_floor) 	
+		msg = bot.send_message(message.chat.id, "Разрешить ли ему работать с клиентами?",
+		parse_mode='html', reply_markup=markup) 
+
+	def email(message):
+		msg = bot.send_message(chatId, "Введите его почту : ",
+		parse_mode='html')
+		bot.register_next_step_handler(msg, workWithClients)
+
+
+	msg = bot.send_message(chatId, "Добавляем Сотрудника. Введите его ФИО : ",
+	parse_mode='html')
+	bot.register_next_step_handler(msg, email)
+
+
+# ДОБАВЛЕНИЕ КОМНАТ
+def add_rooms(chatId):
+	def cab_number(message):
+		msg = bot.send_message(chatId, "Введите номер кабинета : ",
+		parse_mode='html')
+		bot.register_next_step_handler(msg, finish)
+
+	def finish(message):
+
+		markup = types.InlineKeyboardMarkup(row_width = 1)
+		item1 = types.InlineKeyboardButton("Да (Добавть ещё один кабинет)", callback_data = 'yesAddCab')
+		item2 = types.InlineKeyboardButton("Нет (Перейти к добавлению сотрудников)", callback_data = 'noNext')
+		item3 = types.InlineKeyboardButton("Забыл пароль", callback_data = 'recover')
+		markup.add(item1, item2)
+
+		bot.send_message(chatId, "Кабинет добавлен. Добавляем ещё?",
+		parse_mode='html', reply_markup=markup)
+
+	msg = bot.send_message(chatId, "Добавляем кабинет. Введите его этаж : ",
+	parse_mode='html')
+	bot.register_next_step_handler(msg, cab_number)
 
 
 
-def mainmenu():
+# ВЫВОД МЕНЮ
+def main_menu():
 	markup = types.InlineKeyboardMarkup(row_width = 1)
 	item1 = types.InlineKeyboardButton("Создать новую БД.", callback_data = 'create')
 	item2 = types.InlineKeyboardButton("Войти в существующую.", callback_data = 'login')
@@ -51,116 +97,145 @@ def mainmenu():
 	markup.add(item1, item2,item3)
 	return markup
 
+
+# НАЧАЛО
 @bot.message_handler(commands=['start'])
 def welcome(message):
 	markup = types.InlineKeyboardMarkup(row_width = 1)
 	item1 = types.InlineKeyboardButton("Создать новую БД.", callback_data = 'create')
 	item2 = types.InlineKeyboardButton("Войти в существующую.", callback_data = 'login')
-	item3 = types.InlineKeyboardButton("Забыл пароль", callback_data = 'repair')
+	item3 = types.InlineKeyboardButton("Забыл пароль", callback_data = 'recover')
 	markup.add(item1, item2,item3)
 
 	bot.send_message(message.chat.id, "Добро пожаловать. Данный бот создан, что бы ты мог ничего не делать!",
 	parse_mode='html', reply_markup=markup)
 
 
-
-# ХЕНДЕЛЕР ХЗ НА ЧТО
+# ОТЛОВ ВАРИАНТОВ
 @bot.callback_query_handler(func = lambda call: True)
-def func(call):
-	user_name = ''
-	user_mail = ''
-	userID = ''
-	room = ''
-	floor = ''
-	brench_num = ''
-	brench_adress = ''
+def catch(call):
+
+	global currentMessage
 
 	if call.message:
+
+		# СОЗДАНИЕ НОВОЙ БД (callback_data = create)
 		if call.data == 'create':
-			# ЧАТ ID КСТА
-			chatId = call.message.chat.id
-			# УЗНАЕМ ID ТЕЛЕГРАММА НАШЕГО ЮЗЕРА
-			def func_1(message):
-				global user_name
-				user_name = message.text
-				msg = bot.send_message(call.message.chat.id, 'Укажите ваше мыло: ')
-				bot.register_next_step_handler(msg, func_2)
-			def func_2(message):
-				global user_name
-				global user_mail
-				global userID
-				user_mail = message.text
-				msg = bot.send_message(call.message.chat.id, 'Ты указал свои данные, но в силу неподвласных мне причин, я не умею с ними ничего делать. Но вот они:')
-				bot.send_message(call.message.chat.id, f'Твое имя: {user_name}')
-				bot.send_message(call.message.chat.id, f'Твоя почта: {user_mail}')
-				bot.send_message(call.message.chat.id, f'Твой ID: {call.message.from_user.id}')
+
+			def email(message):
+				msg = bot.send_message(call.message.chat.id, f'Введите EMAIL : ')
+				bot.register_next_step_handler(msg, finish)
+
+			def finish(message):
 
 				markup = types.InlineKeyboardMarkup(row_width = 1)
-				item1 = types.InlineKeyboardButton("Добавить отдел", callback_data = 'add')
-				item2 = types.InlineKeyboardButton("Назад", callback_data = 'back')
-				markup.add(item1, item2)	
+				item1 = types.InlineKeyboardButton("Добавить отдел", callback_data = 'add_branch')
+				item2 = types.InlineKeyboardButton("Назад (в меню)", callback_data = 'back')
+				markup.add(item1, item2)
 
-				bot.send_message(message.chat.id, f"Что дальше? {call.data}",
+				bot.send_message(message.chat.id, "Ты указал свои данные, но в силу неподвласных мне причин, я не умею с ними ничего делать.",
 				parse_mode='html', reply_markup=markup)
-				print(call.data)
 
-			msg = bot.send_message(call.message.chat.id, 'Введите ФИО : ')
-			bot.register_next_step_handler(msg, func_1)
+			bot.delete_message(call.message.chat.id, call.message.message_id)
+			msg = bot.send_message(call.message.chat.id, f'Введите ФИО :')
+			bot.register_next_step_handler(msg, email)
+
+
+		# ВОЗВРАЩЕНИЕ В МЕНЮ ИЗ ЛЮБОЙ ТОЧКИ БОТА (ГДЕ ЭТО ВОЗМОЖНО) (callback_data = back)
 		if call.data == 'back':
-			print(call.data)
 			bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, 
-			text='Добро пожаловать. Данный бот создан, что бы ты мог ничего не делать!', reply_markup=mainmenu())
-		if call.data == 'add':
-			print(call.data)
+			text='Добро пожаловать. Данный бот создан, что бы ты мог ничего не делать!', reply_markup=main_menu())
+
+
+		# ДОБАВЛЕНИЕ ОТДЕЛА (callback_data = add_branch)
+		if call.data == 'add_branch':
+			bot.delete_message(call.message.chat.id, call.message.message_id)
+
 			markup = types.InlineKeyboardMarkup(row_width = 1)
-			item1 = types.InlineKeyboardButton("Да (добавить)", callback_data = 'yes')
-			item2 = types.InlineKeyboardButton("Нет (пропустить этап)", callback_data = 'no')
-			markup.add(item1, item2)	
+			item1 = types.InlineKeyboardButton("Да (добавить)", callback_data = 'yesAdd')
+			item2 = types.InlineKeyboardButton("Нет (пропустить этап)", callback_data = 'noSkip')
+			markup.add(item1, item2)
 
-			bot.send_message(call.message.chat.id, f"У вас есть филиалы?",
+			bot.send_message(call.message.chat.id, "У вас есть филиал?",
 			parse_mode='html', reply_markup=markup)
-			print(call.data)
 
-		if call.data == 'no':
-			add_more_room(call.message.chat.id)
+		# ВЕТКА ДОБАВЛЕНИЯ ФИЛИАЛА (callback_data = yesAdd)
+		if call.data == 'yesAdd':
 
-		if call.data == 'yes':
+			def finishBranch(message):
+				add_rooms(call.message.chat.id)
 
-			def add_brench_num(message):
-				global brench_num
-				brench_num = message.text
-				msg = bot.send_message(call.message.chat.id, f'Введите адрес : ')
-				bot.register_next_step_handler(msg, add_brench_adress) 
+			def branchAdress(message):
+				msg = bot.send_message(call.message.chat.id, "Введите адрес филиала : ",
+				parse_mode='html')
+				bot.register_next_step_handler(msg, finishBranch)
 
-			def add_brench_adress(message):
-				global room
-				global floor
-				global brench_num
-				global brench_adress
-				brench_adress = message.text
-				bot.send_message(call.message.chat.id, f'филиал добавлен:')
-				bot.send_message(call.message.chat.id, f'Номер : {brench_num}')
-				bot.send_message(call.message.chat.id, f'Адрес : {brench_adress}')
-				add_more_room(call.message.chat.id)
+			bot.delete_message(call.message.chat.id, call.message.message_id)
+			msg = bot.send_message(call.message.chat.id, "Добавляем филиал. Введите его номер : ",
+			parse_mode='html')
+			bot.register_next_step_handler(msg, branchAdress)
+
+		# ВЕТКА СКИП ФИЛИАЛА (callback_data = noSkip)
+		if call.data == 'noSkip':
+			bot.delete_message(call.message.chat.id, call.message.message_id)
+			add_rooms(call.message.chat.id)
+
+		# ДОБАВЛЕНИЕ ДОПОЛНИТЕЛЬНОГО КАБИНЕТА (callback_data = yesAddCab)
+		if call.data == 'yesAddCab':
+			bot.delete_message(call.message.chat.id, call.message.message_id)
+			add_rooms(call.message.chat.id)
+
+		# ПЕРЕХОД К ДОБАВЛЕНИЮ СОТРУДНИКОВ (callback_data = noNext)
+		if call.data == 'noNext':
+			bot.delete_message(call.message.chat.id, call.message.message_id)
+			add_persons(call.message.chat.id)
+
+		# ДОБАВЛЕНИЕ ПОДЧЕНЁННЫХ (callback_data = yesWork + noWork + yesSubWorkers + noSubWorkers)
+		if call.data == 'yesWork' or call.data == 'noWork':
+			bot.delete_message(call.message.chat.id, call.message.message_id)
+			haveSubWorkers(call.message.chat.id)
+
+		if call.data == 'yesSubWorkers' or call.data == 'noSubWorkers':
+			bot.delete_message(call.message.chat.id, call.message.message_id)
+			finishWorkers(call.message.chat.id)
+
+		# КОНЕЦ РЕГИ,ВЫВОД БАЗЫ (callback_data = end)
+		if call.data == 'end':
+			bot.delete_message(call.message.chat.id, call.message.message_id)
+			bot.send_message(call.message.chat.id, f'Здесь каким-то 🦀 будут выводиться данные базы...')
+
+		# ДОБАВИТЬ ДОПОЛНИТЕЛЬНОГО СОТРУДНИКА (callback_data = yesAddPerson)
+		if call.data == 'yesAddPerson':
+			bot.delete_message(call.message.chat.id, call.message.message_id)
+			add_persons(call.message.chat.id)
+
+		# ВХОД В СУЩЕСТВУЮЩУЮ БД (callback_data = login)
+		if call.data == 'login':
+			def loginCheck(message):
+				if message.text == '12345':
+
+					bot.delete_message(call.message.chat.id, call.message.message_id - 2)
+					markup = types.InlineKeyboardMarkup(row_width = 1)
+					item1 = types.InlineKeyboardButton("Управление подченёнными", callback_data = 'subWorkersControle')
+					item2 = types.InlineKeyboardButton("Список корпоративных паролей", callback_data = 'passList')
+					item3 = types.InlineKeyboardButton("Список Клиентов", callback_data = 'clientsList')
+					item4 = types.InlineKeyboardButton("Добавить подчинённого", callback_data = 'addSubWorker')
+					item5 = types.InlineKeyboardButton("На главную", callback_data = 'back')
+					markup.add(item1, item2, item3, item4, item5)
+
+					bot.send_message(message.chat.id, "<b align='center'>МЕНЮ БАНКА</b>",parse_mode='html', reply_markup=markup)
+
+				else:
+					bot.send_message(call.message.chat.id, f'Ваш проверочный код не верен.')
+					time.sleep(3)
+					bot.edit_message_text(chat_id = call.message.chat.id, message_id = call.message.message_id + 3, 
+					text='Добро пожаловать. Данный бот создан, что бы ты мог ничего не делать!', reply_markup=main_menu())
+			
+			bot.delete_message(call.message.chat.id, call.message.message_id)
+			msg = bot.send_message(call.message.chat.id, f'Введите ваш персональный код : ')
+			bot.register_next_step_handler(msg, loginCheck)
 
 
-
-			msg = bot.send_message(call.message.chat.id, 'Добавляем филиал. Введите номер : ')
-			bot.register_next_step_handler(msg, add_brench_num) 
-
-		
-
-
-
-
-
-
-#@bot.callback_query_handler(func = lambda call: True)
-#def func_branch(call):
-#	if call.message:
-#		if call.data == "back":
-#			bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, 
-#			text='Добро пожаловать. Данный бот создан, что бы ты мог ничего не делать!', reply_markup=mainmenu())	
 
 
 # RUN
