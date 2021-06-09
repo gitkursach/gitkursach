@@ -50,7 +50,7 @@ def add_persons(chatId):
 		item2 = types.InlineKeyboardButton("Нет (Запретит ему доступ к клиентам)", callback_data = 'noWork')
 		markup.add(item1, item2)
 		
-		msg = bot.send_message(message.chat.id, "Разрешить ли ему работать с клиентами?",
+		msg = bot.send_message(chatId, "Разрешить ли ему работать с клиентами?",
 		parse_mode='html', reply_markup=markup) 
 
 	def email(message):
@@ -65,52 +65,45 @@ def add_persons(chatId):
 
 # ДОБАВЛЕНИЕ ПОДЧЕНЁННЫХ
 
-def finishSubWorkers(chatId):
+def subFinish(chatId):
+	markup = types.InlineKeyboardMarkup(row_width = 1)
+	item1 = types.InlineKeyboardButton("Да (Добавть ещё одного)", callback_data = 'subYesAddPerson')
+	item2 = types.InlineKeyboardButton("Закончить (Выйти в меню)", callback_data = 'subEnd')
+	markup.add(item1, item2)
 
-		markup = types.InlineKeyboardMarkup(row_width = 1)
-		item1 = types.InlineKeyboardButton("Да (Добавть ещё одного)", callback_data = 'yesAddPerson')
-		item2 = types.InlineKeyboardButton("Закончить (Перейти к работе с БД)", callback_data = 'endSubAdd')
-		item3 = types.InlineKeyboardButton("Забыл пароль", callback_data = 'recover')
-		markup.add(item1, item2)
-
-		bot.send_message(chatId, "Сотрудник добавлен. Добавляем ещё?",
-		parse_mode='html', reply_markup=markup)
-
+	bot.send_message(chatId, "Сотрудник добавлен. Добавляем ещё?",
+	parse_mode='html', reply_markup=markup)
 
 def subHaveSubWorkers(chatId):
-		markup = types.InlineKeyboardMarkup(row_width = 1)
-		item1 = types.InlineKeyboardButton("Да (Позволит ему самостоятельно добавлять подченённых в БД)", callback_data = 'yesSubWorkers')
-		item2 = types.InlineKeyboardButton("Нет (Запретит ему данную функцию)", callback_data = 'noSubWorkers')
-		markup.add(item1, item2)
-			
-		msg = bot.send_message(chatId, "Разрешить ли ему добавлять подченённых? ",
-		parse_mode='html', reply_markup=markup)
+	markup = types.InlineKeyboardMarkup(row_width = 1)
+	item1 = types.InlineKeyboardButton("Да (Позволит работнику добавлять подченённых)", callback_data = 'sub1YesWork')
+	item2 = types.InlineKeyboardButton("Нет (Запретит ему добавление)", callback_data = 'sub1NoWork')
+	markup.add(item1, item2)
+		
+	msg = bot.send_message(chatId, "Разрешить ли ему добалять подченённых?",
+	parse_mode='html', reply_markup=markup)
 
-def add_subPersons(chatId):
+def subAdd_person(chatId):
 
 	def subWorkWithClients(message):
-
 		markup = types.InlineKeyboardMarkup(row_width = 1)
-		item1 = types.InlineKeyboardButton("Да (Позволит обрабатывать обращения клиентов)", callback_data = 'yesSubWork')
-		item2 = types.InlineKeyboardButton("Нет (Запретит ему доступ к клиентам)", callback_data = 'noSubWork')
+		item1 = types.InlineKeyboardButton("Да (Позволит обрабатывать обращения клиентов)", callback_data = 'subYesWork')
+		item2 = types.InlineKeyboardButton("Нет (Запретит ему доступ к клиентам)", callback_data = 'subNoWork')
 		markup.add(item1, item2)
-		
-		msg = bot.send_message(message.chat.id, "Разрешить ли ему работать с клиентами?",
+			
+		msg = bot.send_message(chatId, "Разрешить ли ему работать с клиентами?",
 		parse_mode='html', reply_markup=markup) 
 
+
+
 	def subEmail(message):
-		msg = bot.send_message(chatId, "Введите его почту : ",
+		msg = bot.send_message(chatId, "Введите его EMAIL : ",
 		parse_mode='html')
-		if True:
-			bot.register_next_step_handler(msg, subWorkWithClients)
-		else:
-			bot.register_next_step_handler(msg, subHaveSubWorkers)
+		bot.register_next_step_handler(msg, subWorkWithClients)
 
-
-	msg = bot.send_message(chatId, "Добавляем Сотрудника. Введите его ФИО : ",
+	msg = bot.send_message(chatId, "Добавляем подчинённых. Введите его ФИО : ",
 	parse_mode='html')
 	bot.register_next_step_handler(msg, subEmail)
-
 
 # ДОБАВЛЕНИЕ КОМНАТ
 def add_rooms(chatId):
@@ -262,6 +255,9 @@ def catch(call):
 		if call.data == 'end':
 			bot.delete_message(call.message.chat.id, call.message.message_id)
 			bot.send_message(call.message.chat.id, f'Здесь каким-то 🦀 будут выводиться данные базы...')
+			time.sleep(4)
+			bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id + 1, 
+			text='Добро пожаловать. Данный бот создан, что бы ты мог ничего не делать!', reply_markup=main_menu(), parse_mode = 'html')
 
 		# ДОБАВИТЬ ДОПОЛНИТЕЛЬНОГО СОТРУДНИКА (callback_data = yesAddPerson)
 		if call.data == 'yesAddPerson':
@@ -273,7 +269,7 @@ def catch(call):
 			def loginCheck(message):
 				if message.text == '12345':
 
-					bot.delete_message(call.message.chat.id, call.message.message_id - 2)
+					bot.delete_message(call.message.chat.id, call.message.message_id - 1)
 					markup = types.InlineKeyboardMarkup(row_width = 1)
 					item1 = types.InlineKeyboardButton("Управление подченёнными", callback_data = 'subWorkersControle')
 					item2 = types.InlineKeyboardButton("Список корпоративных паролей", callback_data = 'passList')
@@ -357,22 +353,27 @@ def catch(call):
 			bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id + 1, 
 			text='<b align="center">МЕНЮ БАНКА</b>', reply_markup=db_menu(), parse_mode = 'html')
 
-		# ДОБАВЛЕНИЕ ПОДЧЕНЁННОГО
+		# ДОБАВЛЕНИЕ ПОДЧИНЁННЫХ
 		if call.data == 'addSubWorker':
 			bot.delete_message(call.message.chat.id, call.message.message_id)
-			add_subPersons(call.message.chat.id)
-
-		if call.data == 'endSubAdd':
-			bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id + 1, 
-			text='<b align="center">МЕНЮ БАНКА</b>', reply_markup=db_menu(), parse_mode = 'html')
-
-		if call.data == 'yesSubWork' or call.data == 'noSubWork':
+			subAdd_person(call.message.chat.id)
+				
+		if call.data == 'subYesWork' or call.data == 'subNoWork':
 			bot.delete_message(call.message.chat.id, call.message.message_id)
 			subHaveSubWorkers(call.message.chat.id)
 
-		if call.data == 'yesSubWorkers' or call.data == 'noSubWorkers':
+		if call.data == 'sub1YesWork' or call.data == 'sub1NoWork':
 			bot.delete_message(call.message.chat.id, call.message.message_id)
-			finishSubWorkers(call.message.chat.id)
+			subFinish(call.message.chat.id)
+
+		if call.data == 'subYesAddPerson':
+			bot.delete_message(call.message.chat.id, call.message.message_id)
+			subAdd_person(call.message.chat.id)
+
+		if call.data == 'subEnd':
+			bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, 
+			text='<b align="center">МЕНЮ БАНКА</b>', reply_markup=db_menu(), parse_mode = 'html')
+
 
 
 # RUN
