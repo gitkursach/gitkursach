@@ -5,6 +5,7 @@
 import telebot
 from telebot import types
 
+import psycopg2
 import hashlib
 import random
 import os
@@ -14,6 +15,7 @@ import time
 # TOKEN
 token = "1819155073:AAGQsLiHM1y6omMJYdldIhGiJrfSN7SHL4g"
 bot = telebot.TeleBot(token) 
+
 
 # ЧИСТКА СООБЩЕНИЙ ЗА ЮЗЕРОМ
 #def messageClear(chatId, messageId):
@@ -391,6 +393,6 @@ def catch(call):
 			text='<b align="center">МЕНЮ БАНКА</b>', reply_markup=db_menu(), parse_mode = 'html')
 
 
-
 # RUN
 bot.polling(none_stop=True)
+
